@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="LoadingDraw">
+        <attr name="lineColor" format="color"/>
+        <attr name="lineWidth" format="integer"/>
+        <attr name="lineSize" format="integer"/>
+
+        <attr name="animationSpeed" format="float"/>
+
+        <attr name="pointColor" format="color"/>
+        <attr name="pointFigure" format="enum">
+            <enum name="CIRCLE" value="0"/>
+            <enum name="SQUARE" value="1"/>
+            <enum name="BATMAN" value="2"/>
+        </attr>
+        <attr name="pointSize" format="integer"/>
+    </declare-styleable>
+</resources>
