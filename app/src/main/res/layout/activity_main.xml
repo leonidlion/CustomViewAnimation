@@ -12,27 +12,13 @@
     <com.boost.leonid.customviewanimation.LoadingDraw
         custom:lineColor="@color/colorAccent"
         custom:lineWidth="1"
-
         custom:pointFigure="SQUARE"
-        custom:pointSize="12"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"/>
-    <com.boost.leonid.customviewanimation.LoadingDraw
-        custom:lineColor="@color/colorAccent"
-        custom:lineWidth="1"
+        custom:pointSize="30"
 
-        custom:pointFigure="SQUARE"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"/>
-    <com.boost.leonid.customviewanimation.LoadingDraw
-        custom:lineColor="@color/colorAccent"
-        custom:lineWidth="1"
+        android:layout_gravity="center"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        />
 
-        custom:pointFigure="SQUARE"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"/>
 
 </LinearLayout>
