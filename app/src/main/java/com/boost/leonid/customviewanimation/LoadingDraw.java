@@ -1,13 +1,19 @@
 package com.boost.leonid.customviewanimation;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.support.v4.util.Pair;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
+import android.view.animation.LinearInterpolator;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class LoadingDraw extends View {
     private static final String TAG = "LoadingDraw";
@@ -34,14 +40,15 @@ public class LoadingDraw extends View {
     private Paint mFigurePaint;
     private Paint mLinePaint;
 
-    private float[] centerFigureCoord;
-    private float[] vertexLeftTop, vertexLeftBottom, vertexRightTop, vertexRightBottom;
+    private List<VertexHolder> mVertexHolders;
+    private VertexHolder mCenter;
 
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        initFigure();
+        mVertexHolders = initFigure();
+        initPaint();
     }
 
     public LoadingDraw(Context context, AttributeSet attrs) {
@@ -59,49 +66,65 @@ public class LoadingDraw extends View {
 
             a.recycle();
         }
+    }
+
+    private void initPaint(){
+        mLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        mLinePaint.setColor(mLineColor);
+        mLinePaint.setStrokeWidth(mLineWidth);
 
         mFigurePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mFigurePaint.setColor(mPointColor);
         mFigurePaint.setStrokeWidth(mPointSize);
 
-        mLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        mLinePaint.setColor(mLineColor);
-        mLinePaint.setStrokeWidth(mLineWidth);
     }
 
-    private void initFigure(){
 
 
-        centerFigureCoord = new float[]{
-                getWidth() / 2 - mPointSize,  //lx
-                getHeight() / 2 - mPointSize, //ly
-                getWidth() / 2 + mPointSize , //bx
-                getHeight() / 2 + mPointSize}; //by
-        vertexLeftTop = new float[]{
-                0,
-                0,
-                mPointSize,
-                mPointSize
-        };
-        vertexLeftBottom = new float[]{
-                0,
-                getHeight() - mPointSize,
-                mPointSize,
-                getHeight()
-        };
-        vertexRightTop = new float[]{
-                getWidth() - mPointSize,
-                0,
-                getWidth(),
-                mPointSize
-        };
-        vertexRightBottom = new float[]{
-                getWidth() - mPointSize,
-                getHeight() - mPointSize,
-                getWidth(),
-                getHeight()
-        };
+    private List<VertexHolder> initFigure(){
+        List<VertexHolder> vertexHolderList = new ArrayList<>();
 
+        VertexHolder vertexHolder;
+
+        float halfFigureSize = mPointSize / 2;
+        float halfWidth = getWidth() / 2;
+        float halfHeight = getHeight() / 2;
+
+        mCenter = new VertexHolder(halfWidth - mPointSize, halfHeight - mPointSize, mPointSize * 2, mPointSize * 2);
+
+        //Left top
+        vertexHolder = new VertexHolder(0,0,mPointSize, mPointSize);
+        vertexHolder.addVertexPosition(
+                new Pair<>(vertexHolder.getLeft(), vertexHolder.getTop()),      //start position
+                new Pair<>(vertexHolder.getLeft(), halfHeight - halfFigureSize),//2-st position in half
+                new Pair<>(halfWidth, halfHeight));                             //end position in center
+        vertexHolderList.add(vertexHolder);
+
+        //Right top
+        vertexHolder = new VertexHolder(getWidth() - mPointSize, 0, mPointSize, mPointSize);
+        vertexHolder.addVertexPosition(
+                new Pair<>(vertexHolder.getLeft(), vertexHolder.getTop()),//start position
+                new Pair<>(vertexHolder.getLeft(), halfHeight - halfFigureSize),//2-st position in half
+                new Pair<>(halfWidth, halfHeight));//end position in center
+        vertexHolderList.add(vertexHolder);
+
+        //Left bottom
+        vertexHolder = new VertexHolder(0, getHeight() - mPointSize,mPointSize, mPointSize);
+        vertexHolder.addVertexPosition(
+                new Pair<>(vertexHolder.getLeft(), vertexHolder.getTop()),//start position
+                new Pair<>(halfWidth - halfFigureSize, vertexHolder.getTop()),//2-st position in half
+                new Pair<>(halfWidth, halfHeight));//end position in center
+        vertexHolderList.add(vertexHolder);
+
+        //Right bottom
+        vertexHolder = new VertexHolder(getWidth() - mPointSize, getHeight() - mPointSize,mPointSize, mPointSize);
+        vertexHolder.addVertexPosition(
+                new Pair<>(vertexHolder.getLeft(), vertexHolder.getTop()),//start position
+                new Pair<>(vertexHolder.getLeft(), halfHeight - halfFigureSize),//2-st position in half
+                new Pair<>(halfWidth, halfHeight));//end position in center
+        vertexHolderList.add(vertexHolder);
+
+        return vertexHolderList;
     }
 
     @Override
@@ -109,34 +132,30 @@ public class LoadingDraw extends View {
         super.onDraw(canvas);
         Log.d(TAG, "onDraw");
 
-        drawFigure(canvas);
-
-
-        canvas.drawLine(vertexLeftTop[2], vertexLeftTop[3], vertexRightBottom[0], vertexRightBottom[1], mLinePaint);
-        canvas.drawLine(vertexLeftBottom[2], vertexLeftBottom[3] - mPointSize, vertexRightTop[0], vertexRightTop[1] + mPointSize, mLinePaint);
-
-        canvas.drawLine(vertexLeftTop[2] - mPointSize / 2, vertexLeftTop[3], vertexLeftBottom[0] + mPointSize /2, vertexLeftBottom[1], mLinePaint);
-        canvas.drawLine(vertexLeftTop[0] + mPointSize, vertexLeftTop[1] + mPointSize / 2, vertexRightTop[0], vertexRightTop[1] + mPointSize / 2, mLinePaint);
-        canvas.drawLine(vertexRightTop[2] - mPointSize / 2, vertexRightTop[3], vertexRightBottom[0] + mPointSize / 2, vertexRightBottom[1], mLinePaint);
-        canvas.drawLine(vertexLeftBottom[2], vertexLeftBottom[3] - mPointSize / 2, vertexRightBottom[0], vertexRightBottom[1] + mPointSize / 2, mLinePaint);
-
+        for (int i = 0; i < mVertexHolders.size(); i++){
+            VertexHolder vertexHolder = mVertexHolders.get(i);
+            for (int j = i + 1; j < mVertexHolders.size(); j++){
+                VertexHolder vertexHolderTo = mVertexHolders.get(j);
+                canvas.drawLine(vertexHolder.getCenterX(), vertexHolder.getCenterY(), vertexHolderTo.getCenterX(), vertexHolderTo.getCenterY(), mLinePaint);
+            }
+            drawFigure(canvas, vertexHolder);
+        }
+        drawFigure(canvas, mCenter);
     }
 
-    private void drawFigure(Canvas canvas) {
+    private void drawFigure(Canvas canvas, VertexHolder x) {
         switch (mPointFigure){
             case SQUARE:
-                canvas.drawRect(centerFigureCoord[0], centerFigureCoord[1],centerFigureCoord[2],centerFigureCoord[3], mFigurePaint);
-                canvas.drawRect(vertexLeftTop[0], vertexLeftTop[1],vertexLeftTop[2],vertexLeftTop[3],mFigurePaint);
-                canvas.drawRect(vertexLeftBottom[0], vertexLeftBottom[1],vertexLeftBottom[2],vertexLeftBottom[3],mFigurePaint);
-                canvas.drawRect(vertexRightTop[0], vertexRightTop[1],vertexRightTop[2],vertexRightTop[3],mFigurePaint);
-                canvas.drawRect(vertexRightBottom[0], vertexRightBottom[1],vertexRightBottom[2],vertexRightBottom[3],mFigurePaint);
+                canvas.drawRect(x.getLeft(), x.getTop(), x.getRight(), x.getBottom(), mFigurePaint);
                 break;
             case CIRCLE:
+                canvas.drawCircle(x.getCenterX(), x.getCenterY(), x.getWidth() / 2, mFigurePaint);
                 break;
             case BATMAN:
                 break;
         }
     }
+
 
     public void setPointColor(int pointColor) {
         mPointColor = pointColor;

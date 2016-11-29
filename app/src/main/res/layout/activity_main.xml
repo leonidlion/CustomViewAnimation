@@ -10,10 +10,25 @@
 
 
     <com.boost.leonid.customviewanimation.LoadingDraw
+        custom:lineColor="@android:color/black"
+        custom:lineWidth="5"
+
+        custom:pointFigure="CIRCLE"
+        custom:pointSize="36"
+        custom:pointColor="@android:color/holo_red_dark"
+
+        android:layout_gravity="center"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_marginBottom="16dp"
+        />
+
+    <com.boost.leonid.customviewanimation.LoadingDraw
         custom:lineColor="@color/colorAccent"
         custom:lineWidth="1"
         custom:pointFigure="SQUARE"
-        custom:pointSize="30"
+        custom:pointSize="50"
+        custom:pointColor="@android:color/holo_red_dark"
 
         android:layout_gravity="center"
         android:layout_width="150dp"
