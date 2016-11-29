@@ -66,4 +66,8 @@ public class VertexHolder {
     public float getBottom(){
         return mTop + mHeigth;
     }
+
+    public List<Pair<Float, Float>> getNextVertexPosition() {
+        return mNextVertexPosition;
+    }
 }

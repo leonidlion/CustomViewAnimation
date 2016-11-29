@@ -1,19 +1,24 @@
 package com.boost.leonid.customviewanimation;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.os.Handler;
 import android.support.v4.util.Pair;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
-import android.view.animation.LinearInterpolator;
 
 import java.util.ArrayList;
 import java.util.List;
+
 
 public class LoadingDraw extends View {
     private static final String TAG = "LoadingDraw";
@@ -22,20 +27,18 @@ public class LoadingDraw extends View {
     private static final int SQUARE = 1;
     private static final int BATMAN = 2;
 
-    private static final int DEFAULT_LINE_COLOR = Color.GREEN;
+    private static final int DEFAULT_LINE_COLOR = Color.BLACK;
     private static final int DEFAULT_LINE_WIDTH = 2;
-    private static final int DEFAULT_ANIMATION_SPEED = 1000;
+    private static final int DEFAULT_ANIMATION_SPEED = 900;
     private static final int DEFAULT_POINT_FIGURE = SQUARE;
-    private static final int DEFAULT_BOX_SIZE = 100;
-    private static final int DEFAULT_POIT_SIZE = 10;
-    private static final int DEFAULT_POIT_COLOR = Color.GREEN;
+    private static final int DEFAULT_POINT_SIZE = 10;
+    private static final int DEFAULT_POINT_COLOR = Color.GREEN;
 
     private int mPointColor;
     private int mPointFigure;
     private int mPointSize;
     private int mLineColor;
     private int mLineWidth;
-    private int mBoxSize;
 
     private Paint mFigurePaint;
     private Paint mLinePaint;
@@ -43,31 +46,56 @@ public class LoadingDraw extends View {
     private List<VertexHolder> mVertexHolders;
     private VertexHolder mCenter;
 
-
-    @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        super.onSizeChanged(w, h, oldw, oldh);
-        mVertexHolders = initFigure();
-        initPaint();
-    }
+    private AnimationHelper mAnimationHelper;
+    private int mDuration;
 
     public LoadingDraw(Context context, AttributeSet attrs) {
         super(context, attrs);
 
         if (attrs != null) {
             TypedArray a = context.getTheme().obtainStyledAttributes(attrs, R.styleable.LoadingDraw, 0, 0);
-            setPointColor(a.getInt(R.styleable.LoadingDraw_pointColor, DEFAULT_POIT_COLOR));
+            setPointColor(a.getInt(R.styleable.LoadingDraw_pointColor, DEFAULT_POINT_COLOR));
             setPointFigure(a.getInt(R.styleable.LoadingDraw_pointFigure, DEFAULT_POINT_FIGURE));
-            setPointSize(a.getInt(R.styleable.LoadingDraw_pointSize, DEFAULT_POIT_SIZE));
-
+            setPointSize(a.getInt(R.styleable.LoadingDraw_pointSize, DEFAULT_POINT_SIZE));
+            setDuration(a.getInt(R.styleable.LoadingDraw_animationSpeed, DEFAULT_ANIMATION_SPEED));
             setLineColor(a.getInt(R.styleable.LoadingDraw_lineColor, DEFAULT_LINE_COLOR));
             setLineWidth(a.getInt(R.styleable.LoadingDraw_lineWidth, DEFAULT_LINE_WIDTH));
-            setBoxSize(a.getInt(R.styleable.LoadingDraw_lineSize, DEFAULT_BOX_SIZE));
 
             a.recycle();
         }
     }
 
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+
+        initPaint();
+
+        mCenter = new VertexHolder(
+                getWidth() / 2 - mPointSize, getHeight() / 2 - mPointSize,
+                mPointSize * 2, mPointSize * 2);
+
+        ObjectAnimator alphaAnimation = ObjectAnimator.ofInt(mFigurePaint, "alpha", 100, 200);
+        alphaAnimation.setDuration(mDuration / 2);
+        alphaAnimation.setRepeatCount(6);
+        alphaAnimation.setRepeatMode(ValueAnimator.REVERSE);
+
+        mVertexHolders = getVertexList();
+
+        List<AnimatorSet> animationTo = new ArrayList<>();
+        List<AnimatorSet> animationFrom = new ArrayList<>();
+
+        for (VertexHolder x : mVertexHolders) {
+            animationTo.add(buildVertexPositionForward(x));
+            animationFrom.add(buildVertexPositionBackward(x));
+        }
+
+        if (mAnimationHelper != null){
+            mAnimationHelper.stopAnimation();
+        }
+        mAnimationHelper = new AnimationHelper(animationFrom, animationTo, alphaAnimation);
+        mAnimationHelper.startAnimation();
+    }
     private void initPaint(){
         mLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mLinePaint.setColor(mLineColor);
@@ -76,12 +104,70 @@ public class LoadingDraw extends View {
         mFigurePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mFigurePaint.setColor(mPointColor);
         mFigurePaint.setStrokeWidth(mPointSize);
+    }
+    private AnimatorSet buildVertexPositionForward(VertexHolder vertex) {
+        Log.d(TAG, "buildForward");
+        AnimatorSet result = new AnimatorSet();
 
+        List<ObjectAnimator> traceX = new ArrayList<>();
+        List<ObjectAnimator> traceY = new ArrayList<>();
+
+        Pair<Float, Float> pos0 = vertex.getNextVertexPosition().get(0);
+
+        for (int i = 1; i < vertex.getNextVertexPosition().size(); i++) {
+            Pair<Float, Float> pos = vertex.getNextVertexPosition().get(i);
+
+            ObjectAnimator animatorX = ObjectAnimator.ofFloat(vertex, "left", pos0.first, pos.first);
+            animatorX.setDuration(mDuration);
+
+            ObjectAnimator animatorY = ObjectAnimator.ofFloat(vertex, "top", pos0.second, pos.second);
+            animatorY.setDuration(mDuration);
+
+            traceX.add(animatorX);
+            traceY.add(animatorY);
+            pos0 = pos;
+        }
+        result.play(traceX.get(0)).with(traceY.get(0));
+        for (int i = 1; i < traceX.size(); i++) {
+            result.play(traceX.get(i)).with(traceY.get(i));
+            result.play(traceX.get(i)).after(traceX.get(i - 1));
+        }
+        return result;
     }
 
+    private AnimatorSet buildVertexPositionBackward(VertexHolder vertex) {
+        Log.d(TAG, "buildBack");
+        AnimatorSet result = new AnimatorSet();
 
+        List<ObjectAnimator> traceX = new ArrayList<>();
+        List<ObjectAnimator> traceY = new ArrayList<>();
 
-    private List<VertexHolder> initFigure(){
+        List<Pair<Float, Float>> trackPoints = vertex.getNextVertexPosition();
+
+        Pair<Float, Float> posN = trackPoints.get(trackPoints.size() - 1);
+
+        for (int i = trackPoints.size() - 2; i >= 0; i--) {
+            Pair<Float, Float> pos = trackPoints.get(i);
+
+            ObjectAnimator animatorX = ObjectAnimator.ofFloat(vertex, "left", posN.first, pos.first);
+            animatorX.setDuration(mDuration);
+            ObjectAnimator animatorY = ObjectAnimator.ofFloat(vertex, "top", posN.second, pos.second);
+            animatorY.setDuration(mDuration);
+
+            traceX.add(animatorX);
+            traceY.add(animatorY);
+            posN = pos;
+        }
+
+        result.play(traceX.get(0)).with(traceY.get(0));
+        for (int i = 1; i < traceX.size(); i++) {
+            result.play(traceX.get(i)).with(traceY.get(i));
+            result.play(traceX.get(i)).after(traceX.get(i - 1));
+        }
+        return result;
+    }
+
+    private List<VertexHolder> getVertexList(){
         List<VertexHolder> vertexHolderList = new ArrayList<>();
 
         VertexHolder vertexHolder;
@@ -90,14 +176,12 @@ public class LoadingDraw extends View {
         float halfWidth = getWidth() / 2;
         float halfHeight = getHeight() / 2;
 
-        mCenter = new VertexHolder(halfWidth - mPointSize, halfHeight - mPointSize, mPointSize * 2, mPointSize * 2);
-
         //Left top
         vertexHolder = new VertexHolder(0,0,mPointSize, mPointSize);
         vertexHolder.addVertexPosition(
                 new Pair<>(vertexHolder.getLeft(), vertexHolder.getTop()),      //start position
                 new Pair<>(vertexHolder.getLeft(), halfHeight - halfFigureSize),//2-st position in half
-                new Pair<>(halfWidth, halfHeight));                             //end position in center
+                new Pair<>(halfWidth - mPointSize /2, halfHeight - mPointSize/2));//end position in center
         vertexHolderList.add(vertexHolder);
 
         //Right top
@@ -105,7 +189,7 @@ public class LoadingDraw extends View {
         vertexHolder.addVertexPosition(
                 new Pair<>(vertexHolder.getLeft(), vertexHolder.getTop()),//start position
                 new Pair<>(vertexHolder.getLeft(), halfHeight - halfFigureSize),//2-st position in half
-                new Pair<>(halfWidth, halfHeight));//end position in center
+                new Pair<>(halfWidth - mPointSize /2, halfHeight - mPointSize/2));//end position in center
         vertexHolderList.add(vertexHolder);
 
         //Left bottom
@@ -113,7 +197,7 @@ public class LoadingDraw extends View {
         vertexHolder.addVertexPosition(
                 new Pair<>(vertexHolder.getLeft(), vertexHolder.getTop()),//start position
                 new Pair<>(halfWidth - halfFigureSize, vertexHolder.getTop()),//2-st position in half
-                new Pair<>(halfWidth, halfHeight));//end position in center
+                new Pair<>(halfWidth - mPointSize /2, halfHeight - mPointSize/2));//end position in center
         vertexHolderList.add(vertexHolder);
 
         //Right bottom
@@ -121,7 +205,7 @@ public class LoadingDraw extends View {
         vertexHolder.addVertexPosition(
                 new Pair<>(vertexHolder.getLeft(), vertexHolder.getTop()),//start position
                 new Pair<>(vertexHolder.getLeft(), halfHeight - halfFigureSize),//2-st position in half
-                new Pair<>(halfWidth, halfHeight));//end position in center
+                new Pair<>(halfWidth - mPointSize /2, halfHeight - mPointSize/2));//end position in center
         vertexHolderList.add(vertexHolder);
 
         return vertexHolderList;
@@ -131,18 +215,24 @@ public class LoadingDraw extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         Log.d(TAG, "onDraw");
-
-        for (int i = 0; i < mVertexHolders.size(); i++){
-            VertexHolder vertexHolder = mVertexHolders.get(i);
-            for (int j = i + 1; j < mVertexHolders.size(); j++){
-                VertexHolder vertexHolderTo = mVertexHolders.get(j);
-                canvas.drawLine(vertexHolder.getCenterX(), vertexHolder.getCenterY(), vertexHolderTo.getCenterX(), vertexHolderTo.getCenterY(), mLinePaint);
-            }
+        if (mAnimationHelper.isCollapsed) {
+            VertexHolder vertexHolder = mVertexHolders.get(0);
             drawFigure(canvas, vertexHolder);
+        } else {
+            for (int i = 0; i < mVertexHolders.size(); i++) {
+                VertexHolder vertexHolderFrom = mVertexHolders.get(i); // save vertex from write line
+                for (int j = i + 1; j < mVertexHolders.size(); j++) {
+                    VertexHolder vertexHolderTo = mVertexHolders.get(j);// save vertex line end
+                    canvas.drawLine(
+                            vertexHolderFrom.getCenterX(), vertexHolderFrom.getCenterY(),
+                            vertexHolderTo.getCenterX(), vertexHolderTo.getCenterY(),
+                            mLinePaint);
+                }
+                drawFigure(canvas, vertexHolderFrom);
+            }
+            drawFigure(canvas, mCenter);
         }
-        drawFigure(canvas, mCenter);
     }
-
     private void drawFigure(Canvas canvas, VertexHolder x) {
         switch (mPointFigure){
             case SQUARE:
@@ -152,11 +242,110 @@ public class LoadingDraw extends View {
                 canvas.drawCircle(x.getCenterX(), x.getCenterY(), x.getWidth() / 2, mFigurePaint);
                 break;
             case BATMAN:
+                // TODO load custom image
                 break;
         }
     }
 
+    private class AnimationHelper {
+        private final Handler mHandler = new Handler();
+        private final Runnable invalidateRunnable;
+        private List<AnimatorSet> mAnimationFrom, mAnimationTo;
+        private ObjectAnimator mObjectAnimator;
+        private Paint mAnimatedPaint;
+        private boolean isCollapsed, isStart;
 
+        AnimationHelper(List<AnimatorSet> animationFrom, List<AnimatorSet> animationTo, ObjectAnimator objectAnimator) {
+            mAnimationFrom = animationFrom;
+            mAnimationTo = animationTo;
+            mObjectAnimator = objectAnimator;
+            mAnimatedPaint = (Paint) mObjectAnimator.getTarget();
+
+            mObjectAnimator.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    super.onAnimationEnd(animation);
+                    if (isStart) {
+                        if (isCollapsed) {
+                            isCollapsed = false;
+                            startAnimationFrom(mDuration / 2);
+                        } else {
+                            startAnimationTo(mDuration / 2);
+                        }
+                    }
+                }
+            });
+            invalidateRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    invalidate();
+                    mHandler.postDelayed(this, 10);
+                }
+            };
+        }
+
+
+        private void startAnimationTo(int delay) {
+            mAnimatedPaint.setAlpha(0);
+            for (int i = 0; i < mAnimationTo.size(); i++) {
+                AnimatorSet anim = mAnimationTo.get(i);
+                anim.setStartDelay(i*delay);
+                anim.start();
+            }
+
+            mAnimationTo.get(mAnimationTo.size() - 1).addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    super.onAnimationEnd(animation);
+                    if (isStart) {
+                        isCollapsed = true;
+                        mObjectAnimator.start();
+                    }
+                }
+            });
+        }
+
+        private void startAnimationFrom(int delayBetweenItems) {
+            mAnimatedPaint.setAlpha(0);
+            for (int i = 0; i < mAnimationFrom.size(); i++) {
+                AnimatorSet anim = mAnimationFrom.get(i);
+                anim.setStartDelay(i*delayBetweenItems);
+                anim.start();
+            }
+
+            mAnimationFrom.get(mAnimationFrom.size() - 1).addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    super.onAnimationEnd(animation);
+                    if (isStart) {
+                        isCollapsed = false;
+                        mObjectAnimator.start();
+                    }
+                }
+            });
+        }
+        void startAnimation() {
+            invalidateRunnable.run();
+            mObjectAnimator.start();
+            isStart = true;
+        }
+
+        void stopAnimation(){
+            isStart = false;
+            mHandler.removeCallbacks(invalidateRunnable);
+            for (AnimatorSet anim: mAnimationTo) {
+                anim.cancel();
+            }
+            for (AnimatorSet anim: mAnimationFrom) {
+                anim.cancel();
+            }
+            mObjectAnimator.cancel();
+        }
+    }
+    /**
+     *
+     *  Getters and Setters
+     */
     public void setPointColor(int pointColor) {
         mPointColor = pointColor;
         invalidate();
@@ -184,10 +373,7 @@ public class LoadingDraw extends View {
         invalidate();
         requestLayout();
     }
-
-    public void setBoxSize(int boxSize) {
-        mBoxSize = boxSize;
-        invalidate();
-        requestLayout();
+    public void setDuration(int duration) {
+        mDuration = duration;
     }
 }

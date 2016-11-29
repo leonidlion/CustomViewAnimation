@@ -3,7 +3,6 @@
     <declare-styleable name="LoadingDraw">
         <attr name="lineColor" format="color"/>
         <attr name="lineWidth" format="integer"/>
-        <attr name="lineSize" format="integer"/>
 
         <attr name="animationSpeed" format="float"/>
 
