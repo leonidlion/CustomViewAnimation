@@ -4,14 +4,19 @@
         <attr name="lineColor" format="color"/>
         <attr name="lineWidth" format="integer"/>
 
-        <attr name="animationSpeed" format="float"/>
+        <attr name="animationSpeed" format="integer"/>
 
         <attr name="pointColor" format="color"/>
         <attr name="pointFigure" format="enum">
             <enum name="CIRCLE" value="0"/>
             <enum name="SQUARE" value="1"/>
-            <enum name="BATMAN" value="2"/>
+            <enum name="BITMAP" value="2"/>
         </attr>
         <attr name="pointSize" format="integer"/>
+
+        <attr name="setBlinkElement" format="enum">
+            <enum name="CENTER" value="0"/>
+            <enum name="LINES" value="1"/>
+        </attr>
     </declare-styleable>
 </resources>

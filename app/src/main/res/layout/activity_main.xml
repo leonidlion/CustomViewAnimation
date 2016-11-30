@@ -8,32 +8,33 @@
     android:orientation="vertical"
     tools:context="com.boost.leonid.customviewanimation.MainActivity">
 
+    <com.boost.leonid.customviewanimation.LoadingDraw
+        android:id="@+id/customLoad1"
+        android:layout_gravity="center"
+        android:layout_margin="10dp"
+        android:layout_width="150dp"
+        android:layout_height="150dp"/>
 
     <com.boost.leonid.customviewanimation.LoadingDraw
-        custom:lineColor="@android:color/black"
-        custom:lineWidth="5"
-
-        custom:pointFigure="CIRCLE"
-        custom:pointSize="36"
-        custom:pointColor="@android:color/holo_red_dark"
-
+        android:id="@+id/customLoad2"
         android:layout_gravity="center"
-        android:layout_width="200dp"
-        android:layout_height="200dp"
-        android:layout_marginBottom="16dp"
-        />
-
-    <com.boost.leonid.customviewanimation.LoadingDraw
-        custom:lineColor="@color/colorAccent"
-        custom:lineWidth="1"
-        custom:pointFigure="SQUARE"
-        custom:pointSize="50"
-        custom:pointColor="@android:color/holo_red_dark"
-
-        android:layout_gravity="center"
+        android:layout_margin="10dp"
         android:layout_width="150dp"
         android:layout_height="150dp"
-        />
+
+        custom:lineColor="@android:color/holo_red_light"
+        custom:lineWidth="4"
+        custom:animationSpeed="500"
+        custom:pointColor="@android:color/black"
+        custom:pointFigure="SQUARE"
+        custom:pointSize="40"/>
+
+    <com.boost.leonid.customviewanimation.LoadingDraw
+        android:id="@+id/customLoad3"
+        android:layout_gravity="center"
+        android:layout_margin="10dp"
+        android:layout_width="150dp"
+        android:layout_height="150dp"/>
 
 
 </LinearLayout>

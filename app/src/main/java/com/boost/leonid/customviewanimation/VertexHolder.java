@@ -3,9 +3,7 @@ package com.boost.leonid.customviewanimation;
 import android.support.v4.util.Pair;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Vector;
 
 public class VertexHolder {
     private float mTop, mLeft, mWidth, mHeigth;
