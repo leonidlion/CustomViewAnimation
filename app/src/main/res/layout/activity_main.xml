@@ -8,19 +8,22 @@
     android:orientation="vertical"
     tools:context="com.boost.leonid.customviewanimation.MainActivity">
 
+    <!--TODO CODESTYLE-->
+    <!--TODO make view square-->
     <com.boost.leonid.customviewanimation.LoadingDraw
         android:id="@+id/customLoad1"
         android:layout_gravity="center"
         android:layout_margin="10dp"
-        android:layout_width="150dp"
-        android:layout_height="150dp"/>
+        android:layout_width="10dp"
+        android:layout_height="200dp"/>
 
+    <!--TODO view different sizes support wrap_content, match_parent-->
     <com.boost.leonid.customviewanimation.LoadingDraw
         android:id="@+id/customLoad2"
         android:layout_gravity="center"
         android:layout_margin="10dp"
-        android:layout_width="150dp"
-        android:layout_height="150dp"
+        android:layout_width="10dp"
+        android:layout_height="10dp"
 
         custom:lineColor="@android:color/holo_red_light"
         custom:lineWidth="4"

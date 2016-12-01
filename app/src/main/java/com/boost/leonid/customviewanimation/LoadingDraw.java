@@ -23,13 +23,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 
+// todo BASE FUNCTIONALITY MISSING
+// custom listener to catch view states(expanded, collapsed)
+// change animation duration at runtime
 public class LoadingDraw extends View {
     private static final String TAG = "LoadingDraw";
 
+    // TODO: 01/12/16 description missing
     private static final int CIRCLE = 0;
     private static final int SQUARE = 1;
     private static final int BITMAP = 2;
 
+    // TODO: 01/12/16 description missing
     private static final int CENTER = 0;
     private static final int LINES = 1;
 
@@ -74,18 +79,23 @@ public class LoadingDraw extends View {
             a.recycle();
         }
     }
+
+    // TODO: 01/12/16 fix methods order oracle codestyle
     private Paint getBlinkPaint(){
         switch (mBlinkElement){
             case CENTER:
                 return mCenterPaint;
             case LINES:
                 return mLinePaint;
-            default: return mCenterPaint;
+            default:
+                return mCenterPaint;
         }
     }
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
+        Log.d(TAG, "onSizeChanged: ");
+        // todo why here? paint don't depends on view sizes
 
         initPaint();
 
@@ -114,6 +124,7 @@ public class LoadingDraw extends View {
         mAnimationHelper = new AnimationHelper(animationFrom, animationTo, alphaAnimation);
         mAnimationHelper.startAnimation();
     }
+
     private void initPaint(){
         mLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mLinePaint.setColor(mLineColor);
@@ -127,6 +138,8 @@ public class LoadingDraw extends View {
         mCenterPaint.setColor(mPointColor);
         mCenterPaint.setStrokeWidth(mPointSize);
     }
+
+    // todo implement animation using Path with points from vertex
     private AnimatorSet buildVertexPositionForward(VertexHolder vertex) {
         Log.d(TAG, "buildForward");
         AnimatorSet result = new AnimatorSet();
@@ -157,6 +170,7 @@ public class LoadingDraw extends View {
         return result;
     }
 
+    // todo implement animation using Path with points from vertex
     private AnimatorSet buildVertexPositionBackward(VertexHolder vertex) {
         Log.d(TAG, "buildBack");
         AnimatorSet result = new AnimatorSet();
@@ -191,7 +205,7 @@ public class LoadingDraw extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        Log.d(TAG, "onDraw");
+//        Log.d(TAG, "onDraw");
         if (mAnimationHelper.isCollapsed) {
             VertexHolder vertexHolder = mVertexHolders.get(0);
             drawFigure(canvas, vertexHolder, mFigurePaint);
@@ -276,8 +290,11 @@ public class LoadingDraw extends View {
     }
 
     private class AnimationHelper {
+        // todo send and handle messages instead of runnable
         private final Handler mHandler = new Handler();
         private final Runnable invalidateRunnable;
+
+
         private List<AnimatorSet> mAnimationFrom, mAnimationTo;
         private ObjectAnimator mObjectAnimator;
         private Paint mAlphaPaint;
@@ -296,6 +313,7 @@ public class LoadingDraw extends View {
                     if (isStart) {
                         if (isCollapsed) {
                             isCollapsed = false;
+                            // todo you use separate duration and delay its different
                             startAnimationFrom(mDuration / 2);
                         } else {
                             startAnimationTo(mDuration / 2);
@@ -374,6 +392,7 @@ public class LoadingDraw extends View {
      *
      *  Getters and Setters
      */
+    //todo oracle code style methods order
     public void setPointColor(int pointColor) {
         mPointColor = pointColor;
         invalidate();

@@ -1,5 +1,6 @@
 package com.boost.leonid.customviewanimation;
 
+import android.graphics.PointF;
 import android.support.v4.util.Pair;
 
 import java.util.Arrays;
@@ -7,7 +8,9 @@ import java.util.List;
 
 public class VertexHolder {
     private float mTop, mLeft, mWidth, mHeigth;
+    // todo use PointF instead of pair
     private List<Pair<Float, Float>> mNextVertexPosition;
+
 
 
     public VertexHolder(float mLeft, float mTop, float mWidth, float mHeigth) {
