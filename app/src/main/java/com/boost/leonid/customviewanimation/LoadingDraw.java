@@ -55,46 +55,64 @@ public class LoadingDraw extends View {
     private VertexHolder mCenter;
     private AnimationHelper mAnimationHelper;
     private Bitmap mBitmap;
+    private AnimationCompleteListener mCallback;
 
     /**
-     *  Getters and Setters
+     * Listener for complete
      */
+    public interface AnimationCompleteListener {
+        void isComplete(boolean complete);
+    }
+    /**
+     * Getters and Setters
+     */
+    public void setAnimationListener(AnimationCompleteListener listener){
+        mCallback = listener;
+    }
     public void setPointColor(int pointColor) {
         mPointColor = pointColor;
         invalidate();
         requestLayout();
     }
+
     public void setPointFigure(int pointFigure) {
         mPointFigure = pointFigure;
     }
+
     public void setLineColor(int lineColor) {
         mLineColor = lineColor;
         invalidate();
         requestLayout();
     }
+
     public void setLineWidth(int lineWidth) {
         mLineWidth = lineWidth;
         invalidate();
         requestLayout();
     }
+
     public void setDuration(int duration) {
         mDuration = duration;
         initAnimation();
     }
+
     public void setBitmap(int bitmap) {
         mBitmap = BitmapFactory.decodeResource(getResources(), bitmap);
         setPointFigure(FIGURE_BITMAP);
     }
+
     public void setItemWidth(float itemWidth) {
         mItemWidth = itemWidth;
         invalidate();
         requestLayout();
     }
+
     public void setItemHeight(float itemHeight) {
         mItemHeight = itemHeight;
         invalidate();
         requestLayout();
     }
+
     public int getDuration() {
         return mDuration;
     }
@@ -125,6 +143,7 @@ public class LoadingDraw extends View {
         }
         initPaint();
     }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
@@ -141,7 +160,30 @@ public class LoadingDraw extends View {
         super.onSizeChanged(w, h, oldw, oldh);
         initAnimation();
     }
-    private void initPaint(){
+    @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+//        Log.d(TAG, "onDraw");
+        if (mAnimationHelper.isCollapsed) {
+            VertexHolder vertexHolder = mVertexHolders.get(0);
+            drawFigure(canvas, vertexHolder, mFigurePaint);
+        } else {
+            for (int i = 0; i < mVertexHolders.size(); i++) {
+                VertexHolder vertexHolderFrom = mVertexHolders.get(i); // save vertex from write line
+                for (int j = i + 1; j < mVertexHolders.size(); j++) {
+                    VertexHolder vertexHolderTo = mVertexHolders.get(j);// save vertex line end
+                    canvas.drawLine(
+                            vertexHolderFrom.getCenterX(), vertexHolderFrom.getCenterY(),
+                            vertexHolderTo.getCenterX(), vertexHolderTo.getCenterY(),
+                            mLinePaint);
+                }
+                drawFigure(canvas, vertexHolderFrom, mFigurePaint);
+            }
+            drawFigure(canvas, mCenter, mCenterPaint);
+        }
+    }
+
+    private void initPaint() {
         mLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mLinePaint.setColor(mLineColor);
         mLinePaint.setStrokeWidth(mLineWidth);
@@ -154,6 +196,7 @@ public class LoadingDraw extends View {
         mCenterPaint.setColor(mPointColor);
         mCenterPaint.setStrokeWidth(5);
     }
+
     private void initAnimation() {
         mCenter = new VertexHolder(
                 getWidth() / 2 - mItemWidth * 2, getHeight() / 2 - mItemHeight * 2,
@@ -174,12 +217,13 @@ public class LoadingDraw extends View {
             animationFrom.add(buildVertexPositionBackward(x));
         }
 
-        if (mAnimationHelper != null){
+        if (mAnimationHelper != null) {
             mAnimationHelper.stopAnimation();
         }
         mAnimationHelper = new AnimationHelper(animationFrom, animationTo, alphaAnimation);
         mAnimationHelper.startAnimation();
     }
+
     private AnimatorSet buildVertexPositionForward(VertexHolder vertex) {
         Log.d(TAG, "buildForward");
         AnimatorSet result = new AnimatorSet();
@@ -209,7 +253,8 @@ public class LoadingDraw extends View {
         }
         return result;
     }
-    private List<VertexHolder> getVertexList(){
+
+    private List<VertexHolder> getVertexList() {
         List<VertexHolder> vertexHolderList = new ArrayList<>();
 
         VertexHolder vertexHolder;
@@ -253,6 +298,7 @@ public class LoadingDraw extends View {
 
         return vertexHolderList;
     }
+
     private AnimatorSet buildVertexPositionBackward(VertexHolder vertex) {
         Log.d(TAG, "buildBack");
         AnimatorSet result = new AnimatorSet();
@@ -284,30 +330,9 @@ public class LoadingDraw extends View {
         }
         return result;
     }
-    @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
-        Log.d(TAG, "onDraw");
-        if (mAnimationHelper.isCollapsed) {
-            VertexHolder vertexHolder = mVertexHolders.get(0);
-            drawFigure(canvas, vertexHolder, mFigurePaint);
-        } else {
-            for (int i = 0; i < mVertexHolders.size(); i++) {
-                VertexHolder vertexHolderFrom = mVertexHolders.get(i); // save vertex from write line
-                for (int j = i + 1; j < mVertexHolders.size(); j++) {
-                    VertexHolder vertexHolderTo = mVertexHolders.get(j);// save vertex line end
-                    canvas.drawLine(
-                            vertexHolderFrom.getCenterX(), vertexHolderFrom.getCenterY(),
-                            vertexHolderTo.getCenterX(), vertexHolderTo.getCenterY(),
-                            mLinePaint);
-                }
-                drawFigure(canvas, vertexHolderFrom, mFigurePaint);
-            }
-            drawFigure(canvas, mCenter, mCenterPaint);
-        }
-    }
+
     private void drawFigure(Canvas canvas, VertexHolder x, Paint paint) {
-        switch (mPointFigure){
+        switch (mPointFigure) {
             case FIGURE_SQUARE:
                 canvas.drawRect(x.getLeft(), x.getTop(), x.getRight(), x.getBottom(), paint);
                 break;
@@ -319,17 +344,17 @@ public class LoadingDraw extends View {
                         mBitmap,
                         null,
                         new Rect(
-                                (int)x.getLeft(),
-                                (int)x.getTop(),
-                                (int)x.getRight(),
-                                (int)x.getBottom()),
+                                (int) x.getLeft(),
+                                (int) x.getTop(),
+                                (int) x.getRight(),
+                                (int) x.getBottom()),
                         paint);
                 break;
         }
     }
 
     /**
-     *  Vertex Holder class
+     * Vertex Holder class
      */
     private class VertexHolder {
         private float mTop, mLeft, mWidth, mHeigth;
@@ -342,9 +367,11 @@ public class LoadingDraw extends View {
             this.mHeigth = mHeigth;
 
         }
-        public void addVertexPosition(PointF ... position){
+
+        public void addVertexPosition(PointF... position) {
             mNextVertexPosition = Arrays.asList(position);
         }
+
         public float getTop() {
             return mTop;
         }
@@ -377,16 +404,19 @@ public class LoadingDraw extends View {
             mHeigth = heigth;
         }
 
-        public float getCenterX(){
+        public float getCenterX() {
             return mLeft + mWidth / 2;
         }
-        public float getCenterY(){
+
+        public float getCenterY() {
             return mTop + mHeigth / 2;
         }
-        public float getRight(){
+
+        public float getRight() {
             return mLeft + mWidth;
         }
-        public float getBottom(){
+
+        public float getBottom() {
             return mTop + mHeigth;
         }
 
@@ -404,6 +434,7 @@ public class LoadingDraw extends View {
         private List<AnimatorSet> mAnimationFrom, mAnimationTo;
         private ObjectAnimator mObjectAnimator;
         private Paint mAlphaPaint;
+        private int mDelayAnimation = mDuration / 2;
         private boolean isCollapsed, isStart;
 
         AnimationHelper(List<AnimatorSet> animationFrom, List<AnimatorSet> animationTo, ObjectAnimator objectAnimator) {
@@ -419,9 +450,9 @@ public class LoadingDraw extends View {
                     if (isStart) {
                         if (isCollapsed) {
                             isCollapsed = false;
-                            startAnimationFrom(mDuration / 2);
+                            startAnimationFrom(mDelayAnimation);
                         } else {
-                            startAnimationTo(mDuration / 2);
+                            startAnimationTo(mDelayAnimation);
                         }
                     }
                 }
@@ -430,26 +461,26 @@ public class LoadingDraw extends View {
                 @Override
                 public void run() {
                     invalidate();
-                    mHandler.postDelayed(this, 10);
+                    mHandler.postDelayed(this, 10); // 30fps
                 }
             };
         }
-
-
         private void startAnimationTo(int delay) {
             mAlphaPaint.setAlpha(0);
             for (int i = 0; i < mAnimationTo.size(); i++) {
                 AnimatorSet anim = mAnimationTo.get(i);
-                anim.setStartDelay(i*delay);
+                anim.setStartDelay(i * delay);
                 anim.start();
             }
-
             mAnimationTo.get(mAnimationTo.size() - 1).addListener(new AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationEnd(Animator animation) {
                     super.onAnimationEnd(animation);
                     if (isStart) {
                         isCollapsed = true;
+                        if (mCallback != null){
+                            mCallback.isComplete(false);
+                        }
                         mObjectAnimator.start();
                     }
                 }
@@ -460,7 +491,7 @@ public class LoadingDraw extends View {
             mAlphaPaint.setAlpha(0);
             for (int i = 0; i < mAnimationFrom.size(); i++) {
                 AnimatorSet anim = mAnimationFrom.get(i);
-                anim.setStartDelay(i*delay);
+                anim.setStartDelay(i * delay);
                 anim.start();
             }
 
@@ -470,24 +501,29 @@ public class LoadingDraw extends View {
                     super.onAnimationEnd(animation);
                     if (isStart) {
                         isCollapsed = false;
+                        if (mCallback != null){
+                            mCallback.isComplete(true);
+                        }
                         mObjectAnimator.start();
                     }
                 }
             });
         }
+
         void startAnimation() {
-            invalidateRunnable.run();
+            mHandler.removeCallbacks(invalidateRunnable);
+            mHandler.post(invalidateRunnable);
             mObjectAnimator.start();
             isStart = true;
         }
 
-        void stopAnimation(){
+        void stopAnimation() {
             isStart = false;
             mHandler.removeCallbacks(invalidateRunnable);
-            for (AnimatorSet anim: mAnimationTo) {
+            for (AnimatorSet anim : mAnimationTo) {
                 anim.cancel();
             }
-            for (AnimatorSet anim: mAnimationFrom) {
+            for (AnimatorSet anim : mAnimationFrom) {
                 anim.cancel();
             }
             mObjectAnimator.cancel();
