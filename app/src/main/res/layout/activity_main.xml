@@ -12,14 +12,16 @@
         android:id="@+id/customLoad1"
         android:layout_gravity="center"
         android:layout_margin="10dp"
-        android:layout_width="150dp"
-        android:layout_height="150dp"/>
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        custom:pointFigure="CIRCLE"
+        />
 
     <com.boost.leonid.customviewanimation.LoadingDraw
         android:id="@+id/customLoad2"
         android:layout_gravity="center"
         android:layout_margin="10dp"
-        android:layout_width="150dp"
+        android:layout_width="100dp"
         android:layout_height="150dp"
 
         custom:lineColor="@android:color/holo_red_light"
@@ -27,7 +29,7 @@
         custom:animationSpeed="500"
         custom:pointColor="@android:color/black"
         custom:pointFigure="SQUARE"
-        custom:pointSize="40"/>
+        />
 
     <com.boost.leonid.customviewanimation.LoadingDraw
         android:id="@+id/customLoad3"
@@ -35,6 +37,4 @@
         android:layout_margin="10dp"
         android:layout_width="150dp"
         android:layout_height="150dp"/>
-
-
 </LinearLayout>

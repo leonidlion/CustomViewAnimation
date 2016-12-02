@@ -12,11 +12,8 @@
             <enum name="SQUARE" value="1"/>
             <enum name="BITMAP" value="2"/>
         </attr>
-        <attr name="pointSize" format="integer"/>
 
-        <attr name="setBlinkElement" format="enum">
-            <enum name="CENTER" value="0"/>
-            <enum name="LINES" value="1"/>
-        </attr>
+        <attr name="itemWidth" format="dimension"/>
+        <attr name="itemHeight" format="dimension"/>
     </declare-styleable>
 </resources>
