@@ -4,7 +4,6 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
-import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -17,7 +16,9 @@ import android.graphics.Path;
 import android.graphics.PathMeasure;
 import android.graphics.PointF;
 import android.graphics.Rect;
+import android.os.Build;
 import android.os.Handler;
+import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
@@ -77,53 +78,43 @@ public class LoadingDraw extends View {
         invalidate();
         requestLayout();
     }
-
     public void setPointFigure(int pointFigure) {
         mPointFigure = pointFigure;
     }
-
     public void setLineColor(int lineColor) {
         mLineColor = lineColor;
         invalidate();
         requestLayout();
     }
-
     public void setLineWidth(int lineWidth) {
         mLineWidth = lineWidth;
         invalidate();
         requestLayout();
     }
-
     public void setDuration(int duration) {
         mDuration = duration;
         initAnimation();
     }
-
     public void setBitmap(int bitmap) {
         mBitmap = BitmapFactory.decodeResource(getResources(), bitmap);
         setPointFigure(FIGURE_BITMAP);
     }
-
     public void setItemWidth(float itemWidth) {
         mItemWidth = itemWidth;
         invalidate();
         requestLayout();
     }
-
     public void setItemHeight(float itemHeight) {
         mItemHeight = itemHeight;
         invalidate();
         requestLayout();
     }
-
     public int getDuration() {
         return mDuration;
     }
-
     public float getItemWidth() {
         return mItemWidth;
     }
-
     public float getItemHeight() {
         return mItemHeight;
     }
@@ -166,7 +157,6 @@ public class LoadingDraw extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-//        Log.d(TAG, "onDraw");
         if (mAnimationHelper.isCollapsed) {
             VertexHolder vertexHolder = mVertexHolders.get(0);
             drawFigure(canvas, vertexHolder, mFigurePaint);
@@ -212,8 +202,8 @@ public class LoadingDraw extends View {
 
         mVertexHolders = getVertexList();
 
-        List<AnimatorSet> animationTo = new ArrayList<>();
-        List<AnimatorSet> animationFrom = new ArrayList<>();
+        List<ValueAnimator> animationTo = new ArrayList<>();
+        List<ValueAnimator> animationFrom = new ArrayList<>();
 
         for (VertexHolder x : mVertexHolders) {
             animationTo.add(buildVertexPositionForward(x));
@@ -227,82 +217,66 @@ public class LoadingDraw extends View {
         mAnimationHelper.startAnimation();
     }
 
-    private AnimatorSet buildVertexPositionForward(VertexHolder vertex) {
-        Log.d(TAG, "buildForward");
-        AnimatorSet result = new AnimatorSet();
-
+    private ValueAnimator buildVertexPositionForward(final VertexHolder vertex) {
         List<PointF> pointTracks = vertex.getNextVertexPosition();
-        List<ObjectAnimator> animators = new ArrayList<>();
 
-        Path path = new Path();
+        final Path path = new Path();
+
         path.moveTo(pointTracks.get(0).x, pointTracks.get(0).y); // goto first position
         for (int i = 1; i < pointTracks.size(); i++) {
             path.lineTo(pointTracks.get(i).x, pointTracks.get(i).y);
         }
-//       path.close();
 
-        ObjectAnimator animatorPath = null;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-            animatorPath = ObjectAnimator.ofFloat(vertex, "left", "top", path);
-            animatorPath.setDuration(mDuration);
+        ValueAnimator pathAnimator;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            pathAnimator = ObjectAnimator.ofFloat(vertex, "left","top", path);
+            pathAnimator.setDuration(mDuration);
+        }else {
+            pathAnimator = ValueAnimator.ofFloat(0.0f,1.0f).setDuration(mDuration);
+            pathAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                float[] point = new float[2];
+                @Override
+                public void onAnimationUpdate(ValueAnimator animation) {
+                    float val = animation.getAnimatedFraction();
+                    PathMeasure pathMeasure = new PathMeasure(path, false);
+                    pathMeasure.getPosTan(pathMeasure.getLength() * val, point, null);
+                    vertex.setLeft(point[0]);
+                    vertex.setTop(point[1]);
+                }
+            });
         }
 
-        animators.add(animatorPath);
-
-        for (int i = 0; i < animators.size(); i++){
-            result.play(animators.get(i));
-        }
-//        result.play(animators.get(0));
-        /*for (int i = 1; i < animators.size(); i++){
-            result.play(animators.get(i)).after(animators.get(i-1));
-        }*/
-   /*     ValueAnimator pathAnimator = ValueAnimator.ofFloat(0.0f,2.0f).setDuration(1000);
-
-        pathAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            float[] point = new float[2];
-
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                float val = animation.getAnimatedFraction();
-                PathMeasure pathMeasure = new PathMeasure(path, true);
-                pathMeasure.getPosTan(pathMeasure.getLength() * val, point, null);
-                vertex.setLeft(point[0]);
-                vertex.setTop(point[1]);
-            }
-        });
-*/
-        return result;
+        return pathAnimator;
     }
-    private AnimatorSet buildVertexPositionBackward(VertexHolder vertex) {
-        Log.d(TAG, "buildBack");
-        AnimatorSet result = new AnimatorSet();
+    private ValueAnimator buildVertexPositionBackward(final VertexHolder vertex) {
+        List<PointF> pointTracks = vertex.getNextVertexPosition();
 
-        List<ObjectAnimator> traceX = new ArrayList<>();
-        List<ObjectAnimator> traceY = new ArrayList<>();
+        final Path path = new Path();
 
-        List<PointF> trackPoints = vertex.getNextVertexPosition();
-
-        PointF posN = trackPoints.get(trackPoints.size() - 1);
-
-        for (int i = trackPoints.size() - 2; i >= 0; i--) {
-            PointF pos = trackPoints.get(i);
-
-            ObjectAnimator animatorX = ObjectAnimator.ofFloat(vertex, "left", posN.x, pos.x);
-            animatorX.setDuration(mDuration);
-            ObjectAnimator animatorY = ObjectAnimator.ofFloat(vertex, "top", posN.y, pos.y);
-            animatorY.setDuration(mDuration);
-
-            traceX.add(animatorX);
-            traceY.add(animatorY);
-            posN = pos;
+        path.moveTo(pointTracks.get(pointTracks.size() - 1).x, pointTracks.get(pointTracks.size() - 1).y); // goto last position
+        for (int i = pointTracks.size() - 2; i >= 0; i--) {
+            path.lineTo(pointTracks.get(i).x, pointTracks.get(i).y);
         }
 
-        result.play(traceX.get(0)).with(traceY.get(0));
-        for (int i = 1; i < traceX.size(); i++) {
-            result.play(traceX.get(i)).with(traceY.get(i));
-            result.play(traceX.get(i)).after(traceX.get(i - 1));
+        ValueAnimator pathAnimator;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            pathAnimator = ObjectAnimator.ofFloat(vertex, "left","top", path);
+            pathAnimator.setDuration(mDuration);
+        }else {
+            pathAnimator = ValueAnimator.ofFloat(0.0f,1.0f).setDuration(mDuration);
+            pathAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                float[] point = new float[2];
+                @Override
+                public void onAnimationUpdate(ValueAnimator animation) {
+                    float val = animation.getAnimatedFraction();
+                    PathMeasure pathMeasure = new PathMeasure(path, false);
+                    pathMeasure.getPosTan(pathMeasure.getLength() * val, point, null);
+                    vertex.setLeft(point[0]);
+                    vertex.setTop(point[1]);
+                }
+            });
         }
-        return result;
+        return pathAnimator;
     }
 
     private List<VertexHolder> getVertexList() {
@@ -448,15 +422,15 @@ public class LoadingDraw extends View {
      * Animation Helper class
      */
     private class AnimationHelper {
-        private final Handler mHandler = new Handler();
-        private final Runnable invalidateRunnable;
-        private List<AnimatorSet> mAnimationFrom, mAnimationTo;
+        private final Handler mHandler;
+        private List<ValueAnimator> mAnimationFrom;
+        private List<ValueAnimator> mAnimationTo;
         private ObjectAnimator mObjectAnimator;
         private Paint mAlphaPaint;
         private int mDelayAnimation = mDuration / 2;
         private boolean isCollapsed, isStart;
 
-        AnimationHelper(List<AnimatorSet> animationFrom, List<AnimatorSet> animationTo, ObjectAnimator objectAnimator) {
+        AnimationHelper(List<ValueAnimator> animationFrom, List<ValueAnimator> animationTo, ObjectAnimator objectAnimator) {
             mAnimationFrom = animationFrom;
             mAnimationTo = animationTo;
             mObjectAnimator = objectAnimator;
@@ -476,18 +450,20 @@ public class LoadingDraw extends View {
                     }
                 }
             });
-            invalidateRunnable = new Runnable() {
+
+            mHandler = new Handler(){
                 @Override
-                public void run() {
+                public void handleMessage(Message msg) {
+                    super.handleMessage(msg);
                     invalidate();
-                    mHandler.postDelayed(this, 10); // 30fps
+                    sendEmptyMessageDelayed(0, 10);
                 }
             };
         }
         private void startAnimationTo(int delay) {
             mAlphaPaint.setAlpha(0);
             for (int i = 0; i < mAnimationTo.size(); i++) {
-                AnimatorSet anim = mAnimationTo.get(i);
+                ValueAnimator anim = mAnimationTo.get(i);
                 anim.setStartDelay(i * delay);
                 anim.start();
             }
@@ -509,7 +485,7 @@ public class LoadingDraw extends View {
         private void startAnimationFrom(int delay) {
             mAlphaPaint.setAlpha(0);
             for (int i = 0; i < mAnimationFrom.size(); i++) {
-                AnimatorSet anim = mAnimationFrom.get(i);
+                ValueAnimator anim = mAnimationFrom.get(i);
                 anim.setStartDelay(i * delay);
                 anim.start();
             }
@@ -530,19 +506,20 @@ public class LoadingDraw extends View {
         }
 
         void startAnimation() {
-            mHandler.removeCallbacks(invalidateRunnable);
-            mHandler.post(invalidateRunnable);
+            mHandler.sendEmptyMessage(0);
             mObjectAnimator.start();
             isStart = true;
         }
 
         void stopAnimation() {
             isStart = false;
-            mHandler.removeCallbacks(invalidateRunnable);
-            for (AnimatorSet anim : mAnimationTo) {
+
+            mHandler.removeMessages(0);
+
+            for (ValueAnimator anim : mAnimationTo) {
                 anim.cancel();
             }
-            for (AnimatorSet anim : mAnimationFrom) {
+            for (ValueAnimator anim : mAnimationFrom) {
                 anim.cancel();
             }
             mObjectAnimator.cancel();
