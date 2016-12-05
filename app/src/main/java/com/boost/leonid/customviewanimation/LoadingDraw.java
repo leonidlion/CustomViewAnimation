@@ -2,7 +2,6 @@ package com.boost.leonid.customviewanimation;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
-import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Context;
@@ -18,6 +17,7 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -65,13 +65,22 @@ public class LoadingDraw extends View {
      * Listener for complete
      */
     public interface AnimationCompleteListener {
-        void isComplete(boolean complete);
+        void onComplete(boolean complete);
     }
+
     /**
      * Getters and Setters
      */
     public void setAnimationListener(AnimationCompleteListener listener){
         mCallback = listener;
+    }
+    public void pause(){
+        Log.d(TAG, "pause");
+        mAnimationHelper.pauseAnimation();
+    }
+    public void resume(){
+        Log.d(TAG, "resume");
+        mAnimationHelper.resumeAnimation();
     }
     public void setPointColor(int pointColor) {
         mPointColor = pointColor;
@@ -422,13 +431,15 @@ public class LoadingDraw extends View {
      * Animation Helper class
      */
     private class AnimationHelper {
-        private final Handler mHandler;
+        private  Handler mHandler;
         private List<ValueAnimator> mAnimationFrom;
         private List<ValueAnimator> mAnimationTo;
         private ObjectAnimator mObjectAnimator;
         private Paint mAlphaPaint;
         private int mDelayAnimation = mDuration / 2;
         private boolean isCollapsed, isStart;
+        private static final int EMPTY_MESSAGE_WHAT = 0;
+        private static final int DELAY_FPS = 10; // 30 fps
 
         AnimationHelper(List<ValueAnimator> animationFrom, List<ValueAnimator> animationTo, ObjectAnimator objectAnimator) {
             mAnimationFrom = animationFrom;
@@ -451,15 +462,28 @@ public class LoadingDraw extends View {
                 }
             });
 
-            mHandler = new Handler(){
+            mHandler = new Handler(Looper.getMainLooper()){
                 @Override
                 public void handleMessage(Message msg) {
                     super.handleMessage(msg);
-                    invalidate();
-                    sendEmptyMessageDelayed(0, 10);
+                    switch (msg.what){
+                        case EMPTY_MESSAGE_WHAT:
+                            invalidate();
+                            sendEmptyMessageDelayed(EMPTY_MESSAGE_WHAT, DELAY_FPS);
+                            break;
+                        case 1:
+                            Log.d(TAG, "PAUSE IN HANDLER");
+                            mCallback = null;
+                            break;
+                        case 2:
+                            Log.d(TAG, "RESUME IN HANDLER");
+                            break;
+                    }
                 }
             };
         }
+
+
         private void startAnimationTo(int delay) {
             mAlphaPaint.setAlpha(0);
             for (int i = 0; i < mAnimationTo.size(); i++) {
@@ -474,7 +498,7 @@ public class LoadingDraw extends View {
                     if (isStart) {
                         isCollapsed = true;
                         if (mCallback != null){
-                            mCallback.isComplete(false);
+                            mCallback.onComplete(false);
                         }
                         mObjectAnimator.start();
                     }
@@ -489,7 +513,6 @@ public class LoadingDraw extends View {
                 anim.setStartDelay(i * delay);
                 anim.start();
             }
-
             mAnimationFrom.get(mAnimationFrom.size() - 1).addListener(new AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationEnd(Animator animation) {
@@ -497,7 +520,7 @@ public class LoadingDraw extends View {
                     if (isStart) {
                         isCollapsed = false;
                         if (mCallback != null){
-                            mCallback.isComplete(true);
+                            mCallback.onComplete(true);
                         }
                         mObjectAnimator.start();
                     }
@@ -506,6 +529,7 @@ public class LoadingDraw extends View {
         }
 
         void startAnimation() {
+            mHandler.removeCallbacksAndMessages(null);
             mHandler.sendEmptyMessage(0);
             mObjectAnimator.start();
             isStart = true;
@@ -514,8 +538,7 @@ public class LoadingDraw extends View {
         void stopAnimation() {
             isStart = false;
 
-            mHandler.removeMessages(0);
-
+            mHandler.removeCallbacksAndMessages(null);
             for (ValueAnimator anim : mAnimationTo) {
                 anim.cancel();
             }
@@ -523,6 +546,31 @@ public class LoadingDraw extends View {
                 anim.cancel();
             }
             mObjectAnimator.cancel();
+        }
+        void pauseAnimation(){
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                for (ValueAnimator anim : mAnimationTo) {
+                    anim.pause();
+                }
+                for (ValueAnimator anim : mAnimationFrom) {
+                    anim.pause();
+                }
+            }else {
+                mHandler.removeCallbacksAndMessages(null);
+            }
+        }
+        void resumeAnimation(){
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                for (ValueAnimator anim : mAnimationTo) {
+                    anim.resume();
+                }
+                for (ValueAnimator anim : mAnimationFrom) {
+                    anim.resume();
+                }
+            }else {
+                mHandler.sendEmptyMessage(EMPTY_MESSAGE_WHAT);
+            }
+
         }
     }
 }

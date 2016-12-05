@@ -3,11 +3,14 @@ package com.boost.leonid.customviewanimation;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity{
     private LoadingDraw customLoad3;
+    private Button mBtnPause, mBtnResume;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,13 +25,13 @@ public class MainActivity extends AppCompatActivity{
         customLoad3.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                Log.d("MAIN", String.valueOf(customLoad3.getDuration()));
+                Log.d("MAIN", String.valueOf(customLoad3.getDuration()));
                 customLoad3.setDuration(customLoad3.getDuration() - 100);
             }
         });
         customLoad3.setAnimationListener(new LoadingDraw.AnimationCompleteListener() {
             @Override
-            public void isComplete(boolean complete) {
+            public void onComplete(boolean complete) {
                 if (complete){
                     Toast.makeText(getApplicationContext(), "Complete", Toast.LENGTH_SHORT).show();
                 }else {
@@ -37,5 +40,20 @@ public class MainActivity extends AppCompatActivity{
             }
         });
 
+        mBtnPause = (Button) findViewById(R.id.btn_pause);
+        mBtnPause.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                customLoad3.pause();
+            }
+        });
+
+        mBtnResume = (Button) findViewById(R.id.btn_resume);
+        mBtnResume.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                customLoad3.resume();
+            }
+        });
     }
 }
