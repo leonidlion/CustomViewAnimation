@@ -2,7 +2,6 @@ package com.boost.leonid.customviewanimation;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
-import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Context;
@@ -28,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+// todo methods to play/pause animation
 public class LoadingDraw extends View {
     private static final String TAG = "LoadingDraw";
 
@@ -40,7 +40,7 @@ public class LoadingDraw extends View {
     private static final int DEFAULT_ANIMATION_SPEED = 900;
     private static final int DEFAULT_POINT_FIGURE = FIGURE_SQUARE;
     private static final int DEFAULT_POINT_COLOR = Color.GREEN;
-    private static final int MIN_SIZE_VIEW = 200;
+    private static final int MIN_SIZE_VIEW = 50;
 
     private int mPointColor;
     private int mPointFigure;
@@ -65,6 +65,7 @@ public class LoadingDraw extends View {
      * Listener for complete
      */
     public interface AnimationCompleteListener {
+        // todo rename::all actions name starts with "on" for example onItemClick, onStateChanged, onViewCollapsed, onViewExpanded
         void isComplete(boolean complete);
     }
     /**
@@ -142,6 +143,7 @@ public class LoadingDraw extends View {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
+        // todo don't use constant, rely on already set params like item width or something like that
         int w = resolveSize(MIN_SIZE_VIEW, widthMeasureSpec);
         int h = resolveSize(MIN_SIZE_VIEW, heightMeasureSpec);
 
@@ -149,11 +151,13 @@ public class LoadingDraw extends View {
 
         setMeasuredDimension(size, size);
     }
+
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        super.onSizeChanged(w, h, oldw, oldh);
+        Log.d(TAG, "onSizeChanged: ");
         initAnimation();
     }
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
@@ -451,12 +455,20 @@ public class LoadingDraw extends View {
                 }
             });
 
+            // todo fix possible leak, remove callbacks when view is destroyed
             mHandler = new Handler(){
                 @Override
                 public void handleMessage(Message msg) {
                     super.handleMessage(msg);
-                    invalidate();
-                    sendEmptyMessageDelayed(0, 10);
+
+                    switch (msg.what) {
+                        case 0:
+                            invalidate();
+                            // todo remove hardcoded values, use constant that describe values
+                            sendEmptyMessageDelayed(0, 10);
+                            break;
+                    }
+
                 }
             };
         }
