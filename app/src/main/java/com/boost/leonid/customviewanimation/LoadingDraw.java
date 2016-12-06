@@ -231,6 +231,13 @@ public class LoadingDraw extends View {
         mAnimationHelper.startAnimation();
     }
 
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        Log.d(TAG,"onDetachedFromWindow");
+        mCallback = null;
+    }
+
     private ValueAnimator buildVertexPositionForward(final VertexHolder vertex) {
         List<PointF> pointTracks = vertex.getNextVertexPosition();
 
@@ -436,7 +443,7 @@ public class LoadingDraw extends View {
      * Animation Helper class
      */
     private class AnimationHelper {
-        private Handler mHandler;
+        private final Handler mHandler;
         private List<ValueAnimator> mAnimationFrom;
         private List<ValueAnimator> mAnimationTo;
         private ObjectAnimator mObjectAnimator;
@@ -473,7 +480,6 @@ public class LoadingDraw extends View {
                     switch (msg.what){
                         case EMPTY_MESSAGE_WHAT:
                             invalidate();
-
                             sendEmptyMessageDelayed(EMPTY_MESSAGE_WHAT, DELAY_FPS);
                             break;
                     }
@@ -545,6 +551,7 @@ public class LoadingDraw extends View {
             }
             mObjectAnimator.cancel();
         }
+
         void pauseAnimation(){
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 for (ValueAnimator anim : mAnimationTo) {
@@ -553,8 +560,6 @@ public class LoadingDraw extends View {
                 for (ValueAnimator anim : mAnimationFrom) {
                     anim.pause();
                 }
-            }else {
-                mHandler.removeCallbacksAndMessages(null);
             }
         }
         void resumeAnimation(){
@@ -565,8 +570,6 @@ public class LoadingDraw extends View {
                 for (ValueAnimator anim : mAnimationFrom) {
                     anim.resume();
                 }
-            }else {
-                mHandler.sendEmptyMessage(EMPTY_MESSAGE_WHAT);
             }
         }
     }
