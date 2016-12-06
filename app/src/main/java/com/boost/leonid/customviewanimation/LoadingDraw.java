@@ -17,6 +17,7 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -66,7 +67,6 @@ public class LoadingDraw extends View {
     public interface AnimationCompleteListener {
         void onComplete(boolean complete);
     }
-
     /**
      * Getters and Setters
      */
@@ -82,46 +82,64 @@ public class LoadingDraw extends View {
         mAnimationHelper.resumeAnimation();
     }
     public void setPointColor(int pointColor) {
-        mPointColor = pointColor;
-        invalidate();
-        requestLayout();
-        initPaint();
+        if (mPointFigure != FIGURE_BITMAP) {
+            mPointColor = pointColor;
+            mFigurePaint.setColor(mPointColor);
+            mCenterPaint.setColor(mPointColor);
+            invalidate();
+        }
     }
     public void setPointFigure(int pointFigure) {
-        mPointFigure = pointFigure;
-        initPaint();
+        if (pointFigure != FIGURE_CIRCLE &&
+                pointFigure != FIGURE_SQUARE &&
+                pointFigure != FIGURE_BITMAP){
+            throw new IllegalArgumentException("That figure does not exists!");
+        }else {
+            mPointFigure = pointFigure;
+            invalidate();
+            requestLayout();
+            initAnimation();
+        }
     }
     public void setLineColor(int lineColor) {
         mLineColor = lineColor;
+        mLinePaint.setColor(mLineColor);
         invalidate();
         requestLayout();
-        initPaint();
     }
     public void setLineWidth(int lineWidth) {
-        mLineWidth = lineWidth;
-        invalidate();
-        requestLayout();
-        initPaint();
+        if (lineWidth >= 0) {
+            mLineWidth = lineWidth;
+            mLinePaint.setStrokeWidth(mLineWidth);
+            invalidate();
+            requestLayout();
+        }
     }
     public void setDuration(int duration) {
-        mDuration = duration;
-        initAnimation();
+        if (duration != 0) {
+            mDuration = duration;
+            initAnimation();
+        }
     }
     public void setBitmap(int bitmap) {
         mBitmap = BitmapFactory.decodeResource(getResources(), bitmap);
         setPointFigure(FIGURE_BITMAP);
     }
     public void setItemWidth(float itemWidth) {
-        mItemWidth = itemWidth;
-        invalidate();
-        requestLayout();
-        initAnimation();
+        if (itemWidth != 0) {
+            mItemWidth = itemWidth;
+            invalidate();
+            requestLayout();
+            initAnimation();
+        }
     }
     public void setItemHeight(float itemHeight) {
-        mItemHeight = itemHeight;
-        invalidate();
-        requestLayout();
-        initAnimation();
+        if (itemHeight != 0) {
+            mItemHeight = itemHeight;
+            invalidate();
+            requestLayout();
+            initAnimation();
+        }
     }
     public int getDuration() {
         return mDuration;
@@ -132,24 +150,39 @@ public class LoadingDraw extends View {
     public float getItemHeight() {
         return mItemHeight;
     }
+    public int getLineColor(){
+        return mLineColor;
+    }
+    public int getLineWidth(){return mLineWidth;}
+    public int getPointFigure(){return mPointFigure;}
+    public int getPointColor(){return mPointColor;}
 
+    /**
+     *  Constructor
+     */
     public LoadingDraw(Context context, AttributeSet attrs) {
         super(context, attrs);
 
+        initPaint();
+
         if (attrs != null) {
             TypedArray a = context.getTheme().obtainStyledAttributes(attrs, R.styleable.LoadingDraw, 0, 0);
-            setPointColor(a.getInt(R.styleable.LoadingDraw_pointColor, DEFAULT_POINT_COLOR));
-            setPointFigure(a.getInt(R.styleable.LoadingDraw_pointFigure, DEFAULT_POINT_FIGURE));
             setDuration(a.getInt(R.styleable.LoadingDraw_animationSpeed, DEFAULT_ANIMATION_SPEED));
+
+            setPointFigure(a.getInt(R.styleable.LoadingDraw_pointFigure, DEFAULT_POINT_FIGURE));
+            setPointColor(a.getInt(R.styleable.LoadingDraw_pointColor, DEFAULT_POINT_COLOR));
+
             setLineColor(a.getInt(R.styleable.LoadingDraw_lineColor, DEFAULT_LINE_COLOR));
             setLineWidth(a.getInt(R.styleable.LoadingDraw_lineWidth, DEFAULT_LINE_WIDTH));
+
             setItemWidth(a.getDimension(R.styleable.LoadingDraw_itemWidth,
                     TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 10, getResources().getDisplayMetrics())));
             setItemHeight(a.getDimension(R.styleable.LoadingDraw_itemHeight,
                     TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 10, getResources().getDisplayMetrics())));
+
             a.recycle();
         }
-        initPaint();
+
     }
 
     @Override
@@ -188,6 +221,13 @@ public class LoadingDraw extends View {
             }
             drawFigure(canvas, mCenter, mCenterPaint);
         }
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        Log.d(TAG,"onDetachedFromWindow");
+        mCallback = null;
     }
 
     private void initPaint() {
@@ -229,13 +269,6 @@ public class LoadingDraw extends View {
         }
         mAnimationHelper = new AnimationHelper(animationFrom, animationTo, alphaAnimation);
         mAnimationHelper.startAnimation();
-    }
-
-    @Override
-    protected void onDetachedFromWindow() {
-        super.onDetachedFromWindow();
-        Log.d(TAG,"onDetachedFromWindow");
-        mCallback = null;
     }
 
     private ValueAnimator buildVertexPositionForward(final VertexHolder vertex) {
@@ -466,14 +499,16 @@ public class LoadingDraw extends View {
                     if (isStart) {
                         if (isCollapsed) {
                             isCollapsed = false;
+                            removeAnimationListenerFrom();
                             startAnimationFrom(mDelayAnimation);
                         } else {
+                            removeAnimationListenerTo();
                             startAnimationTo(mDelayAnimation);
                         }
                     }
                 }
             });
-            mHandler = new Handler(){
+            mHandler = new Handler(Looper.getMainLooper()){
                 @Override
                 public void handleMessage(Message msg) {
                     super.handleMessage(msg);
@@ -486,7 +521,16 @@ public class LoadingDraw extends View {
                 }
             };
         }
-
+        private void removeAnimationListenerTo(){
+            for (ValueAnimator x : mAnimationTo){
+                x.removeAllListeners();
+            }
+        }
+        private void removeAnimationListenerFrom(){
+            for (ValueAnimator x : mAnimationFrom){
+                x.removeAllListeners();
+            }
+        }
         private void startAnimationTo(int delay) {
             mAlphaPaint.setAlpha(0);
             for (int i = 0; i < mAnimationTo.size(); i++) {
@@ -508,7 +552,6 @@ public class LoadingDraw extends View {
                 }
             });
         }
-
         private void startAnimationFrom(int delay) {
             mAlphaPaint.setAlpha(0);
             for (int i = 0; i < mAnimationFrom.size(); i++) {
@@ -530,7 +573,6 @@ public class LoadingDraw extends View {
                 }
             });
         }
-
         void startAnimation() {
             mHandler.removeCallbacksAndMessages(null);
             mHandler.sendEmptyMessage(0);
@@ -538,7 +580,6 @@ public class LoadingDraw extends View {
             mObjectAnimator.start();
             isStart = true;
         }
-
         void stopAnimation() {
             isStart = false;
 
@@ -551,7 +592,6 @@ public class LoadingDraw extends View {
             }
             mObjectAnimator.cancel();
         }
-
         void pauseAnimation(){
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 for (ValueAnimator anim : mAnimationTo) {

@@ -27,8 +27,8 @@
         custom:lineColor="@android:color/holo_red_light"
         custom:lineWidth="4"
         custom:animationSpeed="500"
-        custom:pointColor="@android:color/black"
         custom:pointFigure="SQUARE"
+        custom:pointColor="@android:color/black"
         />
 
     <com.boost.leonid.customviewanimation.LoadingDraw
@@ -37,6 +37,7 @@
         android:layout_margin="10dp"
         android:layout_width="150dp"
         android:layout_height="150dp"/>
+
     <LinearLayout
         android:layout_gravity="center_horizontal"
         android:orientation="horizontal"
@@ -52,6 +53,41 @@
             android:text="resume"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
+        <Button
+            android:id="@+id/btn_line_color"
+            android:text="line color"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+        <Button
+            android:id="@+id/btn_line_width"
+            android:text="line width"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
     </LinearLayout>
-
+    <LinearLayout
+        android:layout_gravity="center_horizontal"
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <Button
+            android:id="@+id/btn_point_figure"
+            android:text="figure"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+        <Button
+            android:id="@+id/btn_point_size"
+            android:text="P.Size"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+        <Button
+            android:id="@+id/btn_point_color"
+            android:text="P.Color"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+        <Button
+            android:id="@+id/btn_duration"
+            android:text="duration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+</LinearLayout>
 </LinearLayout>
