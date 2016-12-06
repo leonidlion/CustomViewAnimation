@@ -17,7 +17,6 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Handler;
-import android.os.Looper;
 import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -31,9 +30,9 @@ import java.util.List;
 public class LoadingDraw extends View {
     private static final String TAG = "LoadingDraw";
 
-    private static final int FIGURE_CIRCLE = 0;
-    private static final int FIGURE_SQUARE = 1;
-    private static final int FIGURE_BITMAP = 2;
+    public static final int FIGURE_CIRCLE = 0;
+    public static final int FIGURE_SQUARE = 1;
+    public static final int FIGURE_BITMAP = 2;
 
     private static final int DEFAULT_LINE_COLOR = Color.BLACK;
     private static final int DEFAULT_LINE_WIDTH = 5;
@@ -86,19 +85,23 @@ public class LoadingDraw extends View {
         mPointColor = pointColor;
         invalidate();
         requestLayout();
+        initPaint();
     }
     public void setPointFigure(int pointFigure) {
         mPointFigure = pointFigure;
+        initPaint();
     }
     public void setLineColor(int lineColor) {
         mLineColor = lineColor;
         invalidate();
         requestLayout();
+        initPaint();
     }
     public void setLineWidth(int lineWidth) {
         mLineWidth = lineWidth;
         invalidate();
         requestLayout();
+        initPaint();
     }
     public void setDuration(int duration) {
         mDuration = duration;
@@ -112,11 +115,13 @@ public class LoadingDraw extends View {
         mItemWidth = itemWidth;
         invalidate();
         requestLayout();
+        initAnimation();
     }
     public void setItemHeight(float itemHeight) {
         mItemHeight = itemHeight;
         invalidate();
         requestLayout();
+        initAnimation();
     }
     public int getDuration() {
         return mDuration;
@@ -362,7 +367,7 @@ public class LoadingDraw extends View {
         private float mTop, mLeft, mWidth, mHeigth;
         private List<PointF> mNextVertexPosition = new ArrayList<>();
 
-        public VertexHolder(float mLeft, float mTop, float mWidth, float mHeigth) {
+         VertexHolder(float mLeft, float mTop, float mWidth, float mHeigth) {
             this.mTop = mTop;
             this.mLeft = mLeft;
             this.mWidth = mWidth;
@@ -370,27 +375,27 @@ public class LoadingDraw extends View {
 
         }
 
-        public void addVertexPosition(PointF... position) {
+         void addVertexPosition(PointF... position) {
             mNextVertexPosition = Arrays.asList(position);
         }
 
-        public float getTop() {
+         float getTop() {
             return mTop;
         }
 
-        public void setTop(float top) {
+         void setTop(float top) {
             mTop = top;
         }
 
-        public float getLeft() {
+         float getLeft() {
             return mLeft;
         }
 
-        public void setLeft(float left) {
+         void setLeft(float left) {
             mLeft = left;
         }
 
-        public float getWidth() {
+         float getWidth() {
             return mWidth;
         }
 
@@ -406,23 +411,23 @@ public class LoadingDraw extends View {
             mHeigth = heigth;
         }
 
-        public float getCenterX() {
+         float getCenterX() {
             return mLeft + mWidth / 2;
         }
 
-        public float getCenterY() {
+         float getCenterY() {
             return mTop + mHeigth / 2;
         }
 
-        public float getRight() {
+         float getRight() {
             return mLeft + mWidth;
         }
 
-        public float getBottom() {
+         float getBottom() {
             return mTop + mHeigth;
         }
 
-        public List<PointF> getNextVertexPosition() {
+         List<PointF> getNextVertexPosition() {
             return mNextVertexPosition;
         }
     }
@@ -431,7 +436,7 @@ public class LoadingDraw extends View {
      * Animation Helper class
      */
     private class AnimationHelper {
-        private  Handler mHandler;
+        private Handler mHandler;
         private List<ValueAnimator> mAnimationFrom;
         private List<ValueAnimator> mAnimationTo;
         private ObjectAnimator mObjectAnimator;
@@ -461,28 +466,20 @@ public class LoadingDraw extends View {
                     }
                 }
             });
-
-            mHandler = new Handler(Looper.getMainLooper()){
+            mHandler = new Handler(){
                 @Override
                 public void handleMessage(Message msg) {
                     super.handleMessage(msg);
                     switch (msg.what){
                         case EMPTY_MESSAGE_WHAT:
                             invalidate();
+
                             sendEmptyMessageDelayed(EMPTY_MESSAGE_WHAT, DELAY_FPS);
-                            break;
-                        case 1:
-                            Log.d(TAG, "PAUSE IN HANDLER");
-                            mCallback = null;
-                            break;
-                        case 2:
-                            Log.d(TAG, "RESUME IN HANDLER");
                             break;
                     }
                 }
             };
         }
-
 
         private void startAnimationTo(int delay) {
             mAlphaPaint.setAlpha(0);
@@ -497,10 +494,10 @@ public class LoadingDraw extends View {
                     super.onAnimationEnd(animation);
                     if (isStart) {
                         isCollapsed = true;
-                        if (mCallback != null){
-                            mCallback.onComplete(false);
-                        }
                         mObjectAnimator.start();
+                    }
+                    if (mCallback != null) {
+                        mCallback.onComplete(false);
                     }
                 }
             });
@@ -519,10 +516,10 @@ public class LoadingDraw extends View {
                     super.onAnimationEnd(animation);
                     if (isStart) {
                         isCollapsed = false;
-                        if (mCallback != null){
-                            mCallback.onComplete(true);
-                        }
                         mObjectAnimator.start();
+                    }
+                    if (mCallback != null) {
+                        mCallback.onComplete(true);
                     }
                 }
             });
@@ -531,6 +528,7 @@ public class LoadingDraw extends View {
         void startAnimation() {
             mHandler.removeCallbacksAndMessages(null);
             mHandler.sendEmptyMessage(0);
+
             mObjectAnimator.start();
             isStart = true;
         }
@@ -570,7 +568,6 @@ public class LoadingDraw extends View {
             }else {
                 mHandler.sendEmptyMessage(EMPTY_MESSAGE_WHAT);
             }
-
         }
     }
 }

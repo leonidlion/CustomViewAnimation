@@ -8,15 +8,30 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import java.util.Random;
+
 public class MainActivity extends AppCompatActivity{
     private LoadingDraw customLoad3;
+    private static final String TAG = "MainActivity";
     private Button mBtnPause, mBtnResume;
+    Random r = new Random();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
+        findViewById(R.id.customLoad1).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int lineColor = r.nextInt();
+                Log.d(TAG, "onClick() set custom Load color: " + lineColor);
+                // todo apply ALL changes in runtime
+                customLoad3.setLineColor(lineColor);
+                customLoad3.setLineWidth(2);
+            }
+        });
         customLoad3 = (LoadingDraw) findViewById(R.id.customLoad3);
         customLoad3.setLineColor(Color.GRAY);
         customLoad3.setLineWidth(6);
@@ -33,9 +48,9 @@ public class MainActivity extends AppCompatActivity{
             @Override
             public void onComplete(boolean complete) {
                 if (complete){
-                    Toast.makeText(getApplicationContext(), "Complete", Toast.LENGTH_SHORT).show();
+                    Log.d(TAG, "Complete");
                 }else {
-                    Toast.makeText(getApplicationContext(), "Incomplete", Toast.LENGTH_SHORT).show();
+                    Log.d(TAG, "Incomplete");
                 }
             }
         });
